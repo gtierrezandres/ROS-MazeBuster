@@ -1,44 +1,40 @@
 #!/usr/bin/env python
 import rospy
-from std_msgs.msg import Float32
 from jetbot import Robot
 from jetbot import Heartbeat
 from sensor_msgs.msg import LaserScan
 from maze_buster.msg import Motor
+from std_msgs.msg import Float32
+import numpy as np
 
 STEERING_AND_THROTTLE_TOPIC_NAME = 'cmd_vel'
 LIDAR_TOPIC_NAME = 'scan'
 CALCULATIONS_NODE_NAME = 'calculations_node'
 THROTTLE_CONSTANT = 0.3
 STEERING_CONSTANT = 0.3
-DIST_THESHOLD = 0.1
-
-left_motor = Float32()
-left_motor.data = 0.0
-
-right_motor = Float32()
-right_motor.data = 0.0
-
-motors = Motor()
+DIST_THESHOLD = 0.13
 
 def move_forward():
     left_motor.data = THROTTLE_CONSTANT
     right_motor.data = THROTTLE_CONSTANT
-    motors = {left_motor, right_motor}
+    motors = [left_motor.data, right_motor.data]
+    # print("this is motors: ", motors)
     return motors
 
 
 def turn_left_in_place(laser_reading):
     left_motor.data = -STEERING_CONSTANT
     right_motor.data = STEERING_CONSTANT
-    motors = {left_motor, right_motor}
+    motors = [left_motor.data, right_motor.data]
+    return motors
     # while laser_reading <= DIST_THESHOLD:
     #     robot.set_motors(-STEERING_CONSTANT, STEERING_CONSTANT)
     
-def turn_left_in_place(laser_reading):
+def turn_right_in_place(laser_reading):
     left_motor.data = STEERING_CONSTANT
     right_motor.data = -STEERING_CONSTANT
-    motors = {left_motor, right_motor}
+    motors = [left_motor.data, right_motor.data]
+    return motors
     # while laser_reading <= DIST_THESHOLD:
     #     robot.set_motors(STEERING_CONSTANT, -STEERING_CONSTANT)
 
@@ -50,16 +46,23 @@ def robotCalculations(data):
             laser_reading = target_range[dist]
             if dist <= mid_point:
                 movement_pub.publish(turn_left_in_place(laser_reading))
-
             elif dist >= mid_point:
                 movement_pub.publish(turn_right_in_place(laser_reading))
 
-            else:
-                movement_pub.publish(move_forward())
+        else:
+            movement_pub.publish(move_forward())
                 
 
 
 if __name__ == '__main__':
+    left_motor = Float32()
+    left_motor.data = 0.0
+
+    right_motor = Float32()
+    right_motor.data = 0.0
+
+    motors = Motor()
+
     rospy.init_node(CALCULATIONS_NODE_NAME, anonymous=False)
     rospy.Subscriber(LIDAR_TOPIC_NAME, LaserScan, robotCalculations)
     movement_pub = rospy.Publisher(STEERING_AND_THROTTLE_TOPIC_NAME, Motor, queue_size=1)

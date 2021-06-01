@@ -10,8 +10,6 @@ project(maze_buster)
 find_package(catkin REQUIRED COMPONENTS
     rospy
     std_msgs
-    sensor_msgs
-    geometry_msgs
     message_generation   # Add message_generation here, after the other packages
 )
 
@@ -73,8 +71,6 @@ add_message_files(
 generate_messages(
     DEPENDENCIES
     std_msgs  # Or other packages containing msgs
-    sensor_msgs
-    geometry_msgs
 )
 
 ################################################

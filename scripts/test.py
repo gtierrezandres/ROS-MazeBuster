@@ -1,11 +1,26 @@
+#!/usr/bin/env python
 from jetbot import Robot
 import time
+from sensor_msgs.msg import LaserScan
+import rospy
 
-def turn_in_place():
-    robot = Robot()
-    robot.left_motor.alpha = 1
-    robot.right_motor.alpha = 0.84
-    robot.set_motors(0.3, -0.3)
-    time.sleep(1)
+def readings(data):
+    mid_point = data.ranges[int(len(data.ranges)/2)]
+    target_range = data.ranges[300:421]
+    for dist in range(len(target_range)):
+        if target_range[dist] < 0.13:
+        print(target_range[dist])
+            # laser_reading = target_range[dist]
+            # if dist <= mid_point:
+            #     movement_pub.publish(turn_left_in_place(laser_reading))
+            # elif dist >= mid_point:
+            #     movement_pub.publish(turn_right_in_place(laser_reading))
 
-turn_in_place()
+        # else:
+        #     movement_pub.publish(move_forward())
+
+if __name__ == '__main__':
+    rospy.init_node("scanning", anonymous=False)
+    rospy.Subscriber("/scan", LaserScan, readings)
+    while not rospy.is_shutdown():
+        rospy.spin()

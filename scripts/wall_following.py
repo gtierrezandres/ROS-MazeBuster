@@ -9,10 +9,15 @@ import numpy as np
 
 STEERING_AND_THROTTLE_TOPIC_NAME = 'cmd_vel'
 LIDAR_TOPIC_NAME = 'scan'
-CALCULATIONS_NODE_NAME = 'calculations_node'
-THROTTLE_CONSTANT = 0.5
-STEERING_CONSTANT = 0.5
-DIST_THESHOLD = 0.6
+CALCULATIONS_NODE_NAME = 'wall_node'
+THROTTLE_CONSTANT = 0.4
+STEERING_CONSTANT = 0.4
+DIST_THESHOLD = 0.3
+error = 0.0
+sum_error = 0.0
+Kp= 1.0
+Ki= 0.5
+Kd= 0.1
 
 def move_forward():
     left_motor.data = THROTTLE_CONSTANT
@@ -21,39 +26,31 @@ def move_forward():
     # print("this is motors: ", motors)
     return motors
 
-
 def turn_left_in_place(laser_reading):
-    left_motor.data = -STEERING_CONSTANT
+    left_motor.data =  STEERING_CONSTANT
     right_motor.data = STEERING_CONSTANT
     motors = [left_motor.data, right_motor.data]
     return motors
-    # while laser_reading <= DIST_THESHOLD:
-    #     robot.set_motors(-STEERING_CONSTANT, STEERING_CONSTANT)
-    
+
 def turn_right_in_place(laser_reading):
     left_motor.data = STEERING_CONSTANT
-    right_motor.data = -STEERING_CONSTANT
+    right_motor.data = 0.5*STEERING_CONSTANT
     motors = [left_motor.data, right_motor.data]
     return motors
-    # while laser_reading <= DIST_THESHOLD:
-    #     robot.set_motors(STEERING_CONSTANT, -STEERING_CONSTANT)
+
+def wall_following(laser_reading):
+        left_motor.data = STEERING_CONSTANT
+        right_motor.data = (laser_reading)*STEERING_CONSTANT
+        motors = [left_motor.data, right_motor.data]
+        return motors
 
 def robotCalculations(data):
-    
-    target_range = data.ranges[480:600]
+    target_range = data.ranges[300:420]
     mid_point = data.ranges[int(len(target_range)/2)]
-    for dist in range(len(target_range)):
-        if target_range[dist] < DIST_THESHOLD:
-            laser_reading = target_range[dist]
-            if dist <= mid_point:
-                movement_pub.publish(turn_left_in_place(laser_reading))
-            elif dist >= mid_point:
-                movement_pub.publish(turn_right_in_place(laser_reading))
-
-        else:
-            movement_pub.publish(move_forward())
-                
-
+    min_dist = min(target_range)
+    error = DIST_THESHOLD-min_dist
+    laser_reading =1+Kp*error+Ki*prev_error+Kd*sum_error
+    movement_pub.publish(wall_following(laser_reading))
 
 if __name__ == '__main__':
     left_motor = Float32()
@@ -62,6 +59,9 @@ if __name__ == '__main__':
     right_motor = Float32()
     right_motor.data = 0.0
 
+    prev_error = error
+    sum_error = sum_error + error
+
     motors = Motor()
 
     rospy.init_node(CALCULATIONS_NODE_NAME, anonymous=False)
@@ -69,5 +69,6 @@ if __name__ == '__main__':
     movement_pub = rospy.Publisher(STEERING_AND_THROTTLE_TOPIC_NAME, Motor, queue_size=1)
     rate = rospy.Rate(20)
     while not rospy.is_shutdown():
+    
         rospy.spin()
         rate.sleep()

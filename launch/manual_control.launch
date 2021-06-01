@@ -1,0 +1,4 @@
+<launch>
+  <node name="manual_drive_node" pkg="maze_buster" type="manual_drive.py" output="screen"/>
+  <node name="cmd_vel_node" pkg="maze_buster" type="cmd_vel_client.py"/>
+</launch>

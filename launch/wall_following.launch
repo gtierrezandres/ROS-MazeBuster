@@ -1,0 +1,8 @@
+<launch>
+  <include file="$(find rplidar_ros)/launch/rplidar.launch"/>
+  
+  
+  <!-- <node name="wall_node" pkg="maze_buster" type="wall_following.py"/> -->
+  <node name="process_node" pkg="maze_buster" type="process_client.py" output="screen"/>
+  <node name="cmd_vel_node" pkg="maze_buster" type="cmd_vel_client.py"/>
+</launch>
